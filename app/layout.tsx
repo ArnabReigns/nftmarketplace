@@ -6,6 +6,8 @@ import { Box, ThemeProvider, useTheme } from '@mui/material'
 import "./globals.css";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import theme from "@/lib/MuiTheme";
+import { AppProvider } from "@/context/AppContext";
+import { Bounce, Slide, ToastContainer } from 'react-toastify';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,19 +38,35 @@ export default function RootLayout({
       >
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
-            <Sidebar />
-            <Appbar />
-            <Box sx={{
-              color: 'white',
-              paddingLeft: '3.7rem',
-              minHeight: '100vh',
-              bgcolor: '#111112',
-              paddingTop: '3.5rem',
-            }}>
-              {modal}
-              {children}
-            </Box>
+            <AppProvider>
 
+              <Sidebar />
+              <Appbar />
+              <Box sx={{
+                color: 'white',
+                paddingLeft: '3.7rem',
+                minHeight: '100vh',
+                bgcolor: '#111112',
+                paddingTop: '3.5rem',
+              }}>
+                {modal}
+                {children}
+              </Box>
+              <ToastContainer
+                position="bottom-right"
+                autoClose={800}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick={false}
+                closeButton={false}
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+                transition={Bounce}
+              />
+            </AppProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

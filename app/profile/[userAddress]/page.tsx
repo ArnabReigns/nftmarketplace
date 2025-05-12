@@ -6,7 +6,7 @@ import { useWallet } from "@/hooks/useWallet";
 import {
 	Alert,
 	Avatar,
-	Box, Button, ButtonGroup, CircularProgress, Dialog, DialogContent, DialogTitle, Divider, Fade, IconButton, Slide, Snackbar, Stack, TextField, Typography
+	Box, Button, ButtonGroup, CircularProgress, Dialog, DialogContent, DialogTitle, Divider, Fade, IconButton, Skeleton, Slide, Snackbar, Stack, TextField, Typography
 } from "@mui/material";
 import Image from "next/image";
 import DEFAULT_BG from "@/public/profileDefaultBG.jpg";
@@ -20,22 +20,21 @@ import { NFT } from "./(components)/NFT";
 import { Created } from "./(components)/Created";
 import axios from "axios";
 import { IUser } from "@/model/user";
+import { useAppContext } from "@/context/AppContext";
+import { cmpAddr } from "@/lib/compareAddress";
 
 
 
 
 function Page({ params }: { params: Promise<{ userAddress: string }> }) {
 	const [nfts, setNfts] = useState<IToken[] | null>(null);
-	const [symbol, setSymbol] = useState<string>("");
-	const [user, setUser] = useState<IUser | null>(null);
 	const [showRegisterModal, setShowRegisterModal] = useState(false);
 	const [name, setName] = useState("");
 	const [savingUser, setSavingUser] = useState(false);
 
-
+	const { address, user, setUser, userLoading, nftContract: contract, refreshMap } = useAppContext();
 	const { userAddress } = use(params);
-	const { address } = useWallet();
-	const { contract } = useContract(address);
+
 
 	async function fetchNFTData() {
 		try {
@@ -73,37 +72,18 @@ function Page({ params }: { params: Promise<{ userAddress: string }> }) {
 		}
 	}
 
-
-	async function fetchUser() {
-		const res = await axios.get("/api/getUser", { params: { address: userAddress } })
-		console.log(res.data);
-		return res.data;
-	}
-
-
 	useEffect(() => {
 		if (userAddress) {
 			fetchNFTData();
 		}
-		if (contract) {
-			contract
-				.name()
-				.then((sym) => setSymbol(sym))
-				.catch((err) => console.log(err));
-		}
-	}, [address, contract, userAddress]);
+	}, [address, contract, userAddress, refreshMap['user_nft']]);
 
 
 	useEffect(() => {
-		if (address) {
-			fetchUser().then((users: IUser) => {
-				if (!users) {
-					if (userAddress == address) setShowRegisterModal(true)
-				}
-				else setUser(users);
-			})
+		if (address && !userLoading) {
+			if (user == null && cmpAddr(userAddress, address)) setShowRegisterModal(true)
 		}
-	}, [address])
+	}, [address, user])
 
 	const tabs = ["Nfts", "Listings", "Created", "Watchlist", "Activity"];
 	const [activeTab, setActiveTab] = useState(0);
@@ -149,11 +129,11 @@ function Page({ params }: { params: Promise<{ userAddress: string }> }) {
 					left={"1rem"}
 					gap={1}
 				>
-					<Avatar
+					{user ? <Avatar
 						src={user?.profilePhoto || default_user.src}
 						alt="Arnab Chatterjee"
 						sx={{ bgcolor: "#DE0374", width: 75, height: 75 }}
-					/>
+					/> : <Skeleton variant="circular" width={75} height={75} />}
 					<Box display={"flex"} sx={{}} gap={2} alignItems={"center"}>
 
 						<Stack>
@@ -248,7 +228,6 @@ function Page({ params }: { params: Promise<{ userAddress: string }> }) {
 										nft.owner.toLowerCase() == userAddress || (nft.seller && nft.seller.toLowerCase() == userAddress)
 								) ?? []
 							}
-							symbol={symbol}
 						/>
 					)}
 					{activeTab == 2 && (
@@ -259,8 +238,6 @@ function Page({ params }: { params: Promise<{ userAddress: string }> }) {
 										nft.creator.toLowerCase() == userAddress
 								) ?? []
 							}
-							symbol={symbol}
-							profileAddess={userAddress}
 						/>
 					)}
 				</Box>

@@ -79,7 +79,7 @@ const TokenSchema = new mongoose.Schema({
 
 TokenSchema.index({ tokenId: 1, nftContract: 1 }, { unique: true }); // Ensure unique combination of tokenId and nftContract
 
-export const Token = mongoose.models.Token || mongoose.model("Token", TokenSchema);
+export const Token: mongoose.Model<IToken> = mongoose.models.Token || mongoose.model<IToken>("Token", TokenSchema);
 
 export interface IToken {
 	tokenId: string;

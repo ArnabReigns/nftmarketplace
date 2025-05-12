@@ -6,10 +6,8 @@ import { Article, Camera, GameController, Pen, UserCircle } from '@phosphor-icon
 import React, { useEffect, useState } from 'react'
 import { useContract } from '@/hooks/useNFTContract';
 import { useWallet } from '@/hooks/useWallet';
-import axios from 'axios';
 import { IToken } from '@/model/nft';
-import { IListing } from '@/model/listings';
-import { ethers } from 'ethers';
+import NftCard from '@/components/NftCard';
 
 
 const Page = () => {
@@ -25,14 +23,14 @@ const Page = () => {
     { name: 'PFPs', icon: UserCircle },
     { name: 'Photography', icon: Camera }]
 
-  const [nfts, setNfts] = useState<IListing[]>();
+  const [nfts, setNfts] = useState<IToken[]>();
 
   async function fetchNFTData() {
     try {
       const response = await fetch(
         `/api/discoverNfts`
       );
-      const data: IListing[] = await response.json();
+      const data: IToken[] = await response.json();
 
       if (response.ok) {
         console.log(data);
@@ -45,11 +43,7 @@ const Page = () => {
   }
 
   useEffect(() => {
-
-    if (address) {
-      fetchNFTData()
-    }
-
+    fetchNFTData()
   }, [address, contract])
 
   return (
@@ -59,16 +53,14 @@ const Page = () => {
           <FilterTags key={idx} tag={filter.name} icon={filter.icon} />
         ))}
       </Stack>
-      {nfts?.map((nft, idx) => (
-        <Box key={idx} my={2}>
-          <Typography>{nft.tokenId}</Typography>
-          <Typography>{nft.nftContract}</Typography>
-          <Typography>{nft.seller}</Typography>
-          <Typography>{ethers.formatEther(nft.price)}</Typography>
-          <Typography>{new Date(nft.createdAt).toLocaleString()}</Typography>
 
-        </Box>
-      ))}
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
+
+        {nfts?.map((nft, idx) => (
+          <NftCard nft={nft} key={idx} />
+        ))}
+
+      </Box>
     </Box>
   )
 }

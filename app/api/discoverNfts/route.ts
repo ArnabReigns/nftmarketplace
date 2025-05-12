@@ -10,8 +10,8 @@ export async function GET(req: Request) {
     try {
         await connectToDatabase();
 
-        let data: IListing[] = await Listing.find({
-            status: "active"
+        let data: IListing[] = await Token.find({
+            "listingId": { $ne: null }
         })
 
         console.log('market listings => ', data);

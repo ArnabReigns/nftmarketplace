@@ -16,7 +16,7 @@ export const NFT = ({
 	nfts,
 }: {
 	nfts: IToken[] | null;
-	symbol: string;
+	symbol?: string;
 }) => {
 
 

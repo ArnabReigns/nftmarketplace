@@ -1,13 +1,28 @@
-import { Button, ButtonGroup, ButtonProps, Divider, ListItemText, Menu, MenuItem, MenuList, Paper, Typography } from '@mui/material'
+import { useAppContext } from '@/context/AppContext'
+import { cmpAddr } from '@/lib/compareAddress'
+import { IToken } from '@/model/nft'
+import { Box, Button, ButtonGroup, ButtonProps, Divider, ListItemText, Menu, MenuItem, MenuList, Paper, Typography } from '@mui/material'
 import { DotsThreeOutlineVertical } from '@phosphor-icons/react/dist/ssr'
-import React, { useState } from 'react'
+import axios from 'axios'
+import React, { useEffect, useState } from 'react'
+import { toast } from 'react-toastify'
 
 interface NftButtonProps extends ButtonProps {
 
+    nft?: IToken
+
 }
-const NftButton = ({ children, ...buttonProps }: NftButtonProps) => {
+const NftButton = ({ nft, children, ...buttonProps }: NftButtonProps) => {
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+    const { address, user, setUser } = useAppContext();
+
+
+    useEffect(() => {
+        console.log(address, nft?.seller, nft?.owner);
+    }, [nft, address])
+
     const open = Boolean(anchorEl);
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
@@ -17,7 +32,7 @@ const NftButton = ({ children, ...buttonProps }: NftButtonProps) => {
     };
 
     return (
-        <>
+        <Box>
             <ButtonGroup
                 className={"list-btn"}
                 sx={{
@@ -41,7 +56,6 @@ const NftButton = ({ children, ...buttonProps }: NftButtonProps) => {
                     {children}
                 </Button>
                 <Button
-                    // size="small"
                     sx={{
                         bgcolor: "primary.dark",
                         color: "white",
@@ -86,29 +100,11 @@ const NftButton = ({ children, ...buttonProps }: NftButtonProps) => {
                 >
                     <MenuList>
 
-                        <MenuItem>
-                            {/* <ListItemIcon> */}
-                            {/* icon */}
-                            {/* </ListItemIcon> */}
 
-
-                            <ListItemText>
-                                Cut
-                            </ListItemText>
-
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    color: "text.secondary",
-                                }}
-                            >
-                                ⌘X
-                            </Typography>
-                        </MenuItem>
-                        <MenuItem>
-                            {/* <ListItemIcon>
-														<ContentCopy fontSize="small" />
-													</ListItemIcon> */}
+                        {/* <MenuItem>
+                            <ListItemIcon>
+                                <ContentCopy fontSize="small" />
+                            </ListItemIcon>
                             <ListItemText>
                                 Copy
                             </ListItemText>
@@ -120,36 +116,35 @@ const NftButton = ({ children, ...buttonProps }: NftButtonProps) => {
                             >
                                 ⌘C
                             </Typography>
-                        </MenuItem>
-                        <MenuItem>
-                            {/* <ListItemIcon>
-														<ContentPaste fontSize="small" />
-													</ListItemIcon> */}
+                        </MenuItem> */}
+                        {(cmpAddr(nft?.owner, address) || cmpAddr(nft?.seller, address)) && < MenuItem onClick={() => {
+                            axios.post('/api/setProfilePicture', {
+                                address: address,
+                                profilePhoto: nft?.metadata.image
+                            }).then((res) => {
+                                console.log(res.data.message);
+                                setUser(res.data.user);
+                                toast.success('Profile picture set successfully');
+                            }).catch(() => {
+                                console.log("Failed to set profile picture. Please try again.");
+                                toast.error("Failed to set profile picture. Please try again.");
+                            })
+                            handleClose();
+                        }}>
                             <ListItemText>
-                                Paste
+                                Set as profile picture
                             </ListItemText>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    color: "text.secondary",
-                                }}
-                            >
-                                ⌘V
-                            </Typography>
-                        </MenuItem>
+                        </ MenuItem>}
                         <Divider />
-                        <MenuItem>
-                            {/* <ListItemIcon>
-														<Cloud fontSize="small" /> 
-													</ListItemIcon> */}
-                            <ListItemText>
-                                Web Clipboard
+                        <MenuItem disabled>
+                            <ListItemText >
+                                Hide NFT
                             </ListItemText>
                         </MenuItem>
                     </MenuList>
                 </Paper>
             </Menu>
-        </>
+        </Box >
     )
 }
 
