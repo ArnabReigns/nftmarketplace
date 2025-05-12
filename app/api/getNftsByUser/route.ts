@@ -1,62 +1,42 @@
 // app/api/getNftsByUser/route.ts
 import { NextResponse } from "next/server";
-import axios from "axios";
-
-// Define types based on the response structure
-export type NftResponse = {
-  nfts: Nft[];
-  next: string;
-};
-
-export type Nft = {
-  identifier: string;
-  collection: string;
-  contract: string;
-  token_standard: string;
-  name: string;
-  description: string;
-  image_url: string;
-  display_image_url: string;
-  display_animation_url: string;
-  metadata_url: string;
-  opensea_url: string;
-  updated_at: string;
-  is_disabled: boolean;
-  is_nsfw: boolean;
-};
+import { connectToDatabase } from "@/lib/mongodb";
+import { Token } from "@/model/nft";
 
 // App Router-compatible GET handler
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
+	const { searchParams } = new URL(req.url);
 
-  const address = searchParams.get("address");
+	const address = searchParams.get("address");
 
-  if (!address) {
-    return NextResponse.json(
-      { error: "Address parameter is required." },
-      { status: 400 }
-    );
-  }
+	console.log("current profile address => " + address);
 
-  try {
-    const options = {
-      method: "GET",
-      url: `https://testnets-api.opensea.io/api/v2/chain/sepolia/account/${address}/nfts`,
-      headers: {
-        accept: "application/json",
-        "x-api-key": process.env.OPENSEA_API_KEY!,
-      },
-    };
+	if (!address) {
+		return NextResponse.json(
+			{ error: "Address parameter is required." },
+			{ status: 400 }
+		);
+	}
 
-    const response = await axios.request(options);
-    const data: NftResponse = response.data;
+	try {
+		await connectToDatabase();
 
-    return NextResponse.json(data);
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { error: "Failed to fetch NFTs." },
-      { status: 500 }
-    );
-  }
+		let data = await Token.find({
+			$or: [
+				{ creator: new RegExp(`^${address}$`, "i") },
+				{ owner: new RegExp(`^${address}$`, "i") },
+				{ seller: new RegExp(`^${address}$`, "i") },
+			],
+		});
+
+		console.log(data);
+
+		return NextResponse.json(data);
+	} catch (err) {
+		console.error(err);
+		return NextResponse.json(
+			{ error: "Failed to fetch NFTs." },
+			{ status: 500 }
+		);
+	}
 }

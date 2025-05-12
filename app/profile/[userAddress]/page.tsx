@@ -1,47 +1,52 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Nft, NftResponse } from "../../api/getNftsByUser/route";
 import { useWallet } from "@/hooks/useWallet";
+
 import {
-	Accordion,
-	AccordionDetails,
-	AccordionSummary,
+	Alert,
 	Avatar,
-	Box,
-	Divider,
-	Stack,
-	Typography,
+	Box, Button, ButtonGroup, CircularProgress, Dialog, DialogContent, DialogTitle, Divider, Fade, IconButton, Slide, Snackbar, Stack, TextField, Typography
 } from "@mui/material";
 import Image from "next/image";
 import DEFAULT_BG from "@/public/profileDefaultBG.jpg";
-import {
-	CaretDown,
-	ArrowFatLinesDown,
-	Copy,
-	Globe,
-	Pencil,
-} from "@phosphor-icons/react/dist/ssr";
+import { Copy, Globe, Pencil, PhosphorLogo } from "@phosphor-icons/react/dist/ssr";
 import default_user from "@/public/user_default.png";
 import { use } from "react";
-import FilterTags from "@/components/FilterTags";
-import Link from "next/link";
-import { NamedFragment } from "ethers";
+import { useContract } from "@/hooks/useNFTContract";
 
-const page = ({ params }: { params: Promise<{ userAddress: string }> }) => {
-	const [nfts, setNfts] = useState<Nft[] | null>(null);
+import { IToken } from "@/model/nft";
+import { NFT } from "./(components)/NFT";
+import { Created } from "./(components)/Created";
+import axios from "axios";
+import { IUser } from "@/model/user";
+
+
+
+
+function Page({ params }: { params: Promise<{ userAddress: string }> }) {
+	const [nfts, setNfts] = useState<IToken[] | null>(null);
+	const [symbol, setSymbol] = useState<string>("");
+	const [user, setUser] = useState<IUser | null>(null);
+	const [showRegisterModal, setShowRegisterModal] = useState(false);
+	const [name, setName] = useState("");
+	const [savingUser, setSavingUser] = useState(false);
+
 
 	const { userAddress } = use(params);
+	const { address } = useWallet();
+	const { contract } = useContract(address);
 
-	async function fetchUserProfile() {
+	async function fetchNFTData() {
 		try {
 			const response = await fetch(
 				`/api/getNftsByUser?address=${userAddress}`
 			);
-			const data: NftResponse = await response.json();
+			const data: IToken[] = await response.json();
 
+			console.log(data);
 			if (response.ok) {
-				setNfts(data.nfts.filter((nft) => nft.image_url));
+				setNfts(data?.filter((nft) => nft.metadata.image));
 			}
 		} catch (err) {
 			console.log("Failed to fetch NFTs. Please try again.");
@@ -49,19 +54,85 @@ const page = ({ params }: { params: Promise<{ userAddress: string }> }) => {
 		}
 	}
 
-	useEffect(() => {
-		console.log("called");
-		if (userAddress) {
-			fetchUserProfile();
+	async function registerUser() {
+		try {
+			if (!name) return;
+
+			setSavingUser(true);
+			const response = await axios.post("/api/registerUser", {
+				name: name,
+				address: address,
+			});
+			console.log(response.data);
+			setUser(response.data);
+		} catch (err) {
+			console.log("Failed to register user. Please try again.");
+			console.error(err);
+		} finally {
+			setSavingUser(false);
 		}
-	}, [userAddress]);
+	}
+
+
+	async function fetchUser() {
+		const res = await axios.get("/api/getUser", { params: { address: userAddress } })
+		console.log(res.data);
+		return res.data;
+	}
+
+
+	useEffect(() => {
+		if (userAddress) {
+			fetchNFTData();
+		}
+		if (contract) {
+			contract
+				.name()
+				.then((sym) => setSymbol(sym))
+				.catch((err) => console.log(err));
+		}
+	}, [address, contract, userAddress]);
+
+
+	useEffect(() => {
+		if (address) {
+			fetchUser().then((users: IUser) => {
+				if (!users) {
+					if (userAddress == address) setShowRegisterModal(true)
+				}
+				else setUser(users);
+			})
+		}
+	}, [address])
 
 	const tabs = ["Nfts", "Listings", "Created", "Watchlist", "Activity"];
-
 	const [activeTab, setActiveTab] = useState(0);
 
+	const [state, setState] = React.useState<{
+		open: boolean;
+		Transition: any
+	}>({
+		open: false,
+		Transition: Fade,
+	});
+
+	const showSnackBar = (Transition: any) =>
+		setState({
+			open: true,
+			Transition,
+		});
+
+	const handleCopy = async (text: string) => {
+		try {
+			await navigator.clipboard.writeText(text);
+			showSnackBar(Slide)
+		} catch (err) {
+			console.error('Failed to copy!', err);
+		}
+	};
 	return (
 		<Stack sx={{}}>
+
 			<Box width={"100%"} height={"18rem"} position={"relative"}>
 				<Image
 					src={DEFAULT_BG}
@@ -79,16 +150,19 @@ const page = ({ params }: { params: Promise<{ userAddress: string }> }) => {
 					gap={1}
 				>
 					<Avatar
-						src={default_user.src}
+						src={user?.profilePhoto || default_user.src}
 						alt="Arnab Chatterjee"
 						sx={{ bgcolor: "#DE0374", width: 75, height: 75 }}
-					>
-						AC
-					</Avatar>
+					/>
 					<Box display={"flex"} sx={{}} gap={2} alignItems={"center"}>
-						<Typography fontSize={"1.2rem"}>
-							{userAddress}
-						</Typography>
+
+						<Stack>
+
+							{user && <Typography fontSize={"1.4rem"}>{user.name}</Typography>}
+							<Typography fontSize={user ? "0.9rem" : "1.2rem"} color={user ? "text.secondary" : ""}>
+								{userAddress}
+							</Typography>
+						</Stack>
 						<Divider flexItem orientation="vertical" />
 						<Pencil
 							size={20}
@@ -100,26 +174,44 @@ const page = ({ params }: { params: Promise<{ userAddress: string }> }) => {
 							weight="light"
 							style={{ cursor: "pointer" }}
 						/>
-						<Copy
-							size={20}
-							weight="light"
-							style={{ cursor: "pointer" }}
-						/>
+						<>
+
+							<IconButton onClick={() => handleCopy(userAddress)}>
+								<Copy
+									size={20}
+									weight="light"
+									style={{ cursor: "pointer" }}
+								/>
+							</IconButton>
+							<Snackbar
+								open={state.open}
+								onClose={() => setState({
+									...state,
+									open: false,
+								})}
+								slots={{ transition: state.Transition }}
+								message='Address Copied to clipboard'
+								key={state.Transition.name}
+								autoHideDuration={1200}
+								anchorOrigin={{
+									vertical: "bottom",
+									horizontal: "right",
+								}}
+							/>
+						</>
 					</Box>
 					<Typography
 						variant="caption"
 						width={"50vw"}
 						color="text.secondary"
 					>
-						I'm just getting started on my NFT journey. This is
+						{user?.bio || `I'm just getting started on my NFT journey. This is
 						where you'll find my favorite collectibles, creations,
 						and marketplace activity. Stay tuned — more to come
-						soon!
+						soon!`}
 					</Typography>
 				</Stack>
 			</Box>
-
-			{/* asdasd */}
 			<Box
 				sx={{
 					zIndex: 1,
@@ -147,131 +239,68 @@ const page = ({ params }: { params: Promise<{ userAddress: string }> }) => {
 					))}
 				</Stack>
 
-				<Box mt={2}>{activeTab == 0 && <NFT nfts={nfts} />}</Box>
+				<Box mt={2}>
+					{activeTab == 0 && (
+						<NFT
+							nfts={
+								nfts?.filter(
+									(nft) =>
+										nft.owner.toLowerCase() == userAddress || (nft.seller && nft.seller.toLowerCase() == userAddress)
+								) ?? []
+							}
+							symbol={symbol}
+						/>
+					)}
+					{activeTab == 2 && (
+						<Created
+							nfts={
+								nfts?.filter(
+									(nft) =>
+										nft.creator.toLowerCase() == userAddress
+								) ?? []
+							}
+							symbol={symbol}
+							profileAddess={userAddress}
+						/>
+					)}
+				</Box>
 			</Box>
+
+
+
+			<Dialog open={showRegisterModal} onClose={() => setShowRegisterModal(false)} maxWidth="sm" fullWidth>
+				<Stack gap={1} p={6} bgcolor={"#202020"}>
+
+					<Box display={'flex'} gap={2} alignItems={'center'}>
+						<PhosphorLogo color="#fff" size={50} style={{ background: '#0086FF' }} />
+						<Stack gap={0.2}>
+							<Typography fontSize={"1.5rem"}>Sign Up to MetaMint</Typography>
+							<Typography color={"#9d9d9d"}>
+								Please enter your name to continue
+							</Typography>
+						</Stack>
+					</Box>
+					<TextField
+						autoFocus
+						id="name"
+						label="Username"
+						value={name}
+						fullWidth
+						variant="filled"
+						size="medium"
+						sx={{ my: 2, mt: 4 }}
+						onChange={(e) => setName(e.target.value)}
+					/>
+
+					<ButtonGroup fullWidth>
+						<Button onClick={() => setShowRegisterModal(false)}>Later</Button>
+						<Button variant="contained" onClick={registerUser}>{savingUser ? <CircularProgress size={20} /> : "Sign Up"}</Button>
+					</ButtonGroup>
+
+				</Stack>
+			</Dialog>
 		</Stack>
 	);
-};
-
-const NFT = ({ nfts }: { nfts: Nft[] | null }) => {
-	return (
-		<Box display={"flex"} gap={1}>
-			<Box
-				sx={{
-					width: "20rem",
-				}}
-			>
-				<Accordion>
-					<AccordionSummary
-						expandIcon={<CaretDown />}
-						aria-controls="panel1-content"
-						id="panel1-header"
-					>
-						<Typography component="span">Status</Typography>
-					</AccordionSummary>
-					<AccordionDetails
-						sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}
-					>
-						<FilterTags tag="All" active fontSize={"0.8rem"} />
-						<FilterTags tag="Listed" fontSize={"0.8rem"} />
-						<FilterTags tag="Not Listed" fontSize={"0.8rem"} />
-					</AccordionDetails>
-				</Accordion>
-				<Accordion disabled>
-					<AccordionSummary
-						expandIcon={<CaretDown />}
-						aria-controls="panel2-content"
-						id="panel2-header"
-					>
-						<Typography component="span">Collection</Typography>
-					</AccordionSummary>
-					<AccordionDetails>
-						Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-						Suspendisse malesuada lacus ex, sit amet blandit leo
-						lobortis eget.
-					</AccordionDetails>
-				</Accordion>
-			</Box>
-			<Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-				{nfts?.map((nft, idx) => (
-					<Box
-						key={idx}
-						sx={{
-							borderRadius: 2,
-							overflow: "hidden",
-							bgcolor: "#141415",
-							borderColor: "#262627",
-							borderWidth: 2,
-							transition: "transform 0.2s ease-out",
-							boxShadow: "0 2px 10px -2px #9f9f9f14",
-							":hover": {
-								transform: "translateY(-2px)",
-							},
-						}}
-					>
-						<Box
-							sx={{
-								height: "15rem",
-								width: "14rem",
-								position: "relative",
-								cursor: "pointer",
-							}}
-						>
-							<Image
-								src={nft.image_url}
-								alt={nft.description}
-								fill={true}
-								objectFit="cover"
-							/>
-						</Box>
-						<Box p={1}>
-							<Typography>{nft.name}</Typography>
-							<Box display={"flex"} gap={1} mt={2}>
-								<a
-									target="_blank"
-									rel="noopener noreferrer"
-									href={
-										"https://sepolia.etherscan.io/address/" +
-										nft.contract
-									}
-								>
-									<Typography
-										sx={{
-											bgcolor: "#262525",
-											border: "1px solid #414040",
-											p: 0.2,
-											px: 1,
-											borderRadius: 2,
-											fontSize: "0.9rem",
-										}}
-									>
-										{shortenAddress(nft.contract)}
-									</Typography>
-								</a>
-								<Typography
-									sx={{
-										bgcolor: "#262525",
-										border: "1px solid #414040",
-										p: 0.2,
-										px: 1,
-										borderRadius: 2,
-										fontSize: "0.9rem",
-									}}
-								>
-									TOKEN #{nft.identifier}
-								</Typography>
-							</Box>
-						</Box>
-					</Box>
-				))}
-			</Box>
-		</Box>
-	);
-};
-
-export function shortenAddress(address: string, chars = 4): string {
-	if (!address) return "";
-	return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;
 }
 
-export default page;
+export default Page;

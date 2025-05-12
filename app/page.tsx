@@ -3,17 +3,19 @@
 import FilterTags from '@/components/FilterTags'
 import { Box, Stack, Typography } from '@mui/material'
 import { Article, Camera, GameController, Pen, UserCircle } from '@phosphor-icons/react/dist/ssr'
-const { ethers } = require("ethers");
 import React, { useEffect, useState } from 'react'
-import CONTRACT_ABI from '@/lib/nftContractABi.json'
-import { useContract } from '@/hooks/useContract';
+import { useContract } from '@/hooks/useNFTContract';
 import { useWallet } from '@/hooks/useWallet';
+import axios from 'axios';
+import { IToken } from '@/model/nft';
+import { IListing } from '@/model/listings';
+import { ethers } from 'ethers';
 
 
-const page = () => {
+const Page = () => {
 
   const { address } = useWallet();
-  const { contract } = useContract(process.env.NEXT_PUBLIC_CONTRACT_ADDRESS, CONTRACT_ABI, address)
+  const { contract } = useContract(address)
 
 
   const filterTags = [
@@ -23,17 +25,29 @@ const page = () => {
     { name: 'PFPs', icon: UserCircle },
     { name: 'Photography', icon: Camera }]
 
-  const [nfts, setNfts] = useState();
+  const [nfts, setNfts] = useState<IListing[]>();
+
+  async function fetchNFTData() {
+    try {
+      const response = await fetch(
+        `/api/discoverNfts`
+      );
+      const data: IListing[] = await response.json();
+
+      if (response.ok) {
+        console.log(data);
+        setNfts(data)
+      }
+    } catch (err) {
+      console.log("Failed to fetch NFTs. Please try again.");
+      console.error(err);
+    }
+  }
 
   useEffect(() => {
 
-    async function getTokenCount() {
-      const count = await contract!.tokenCount();
-      setNfts(count);
-    }
-
-    if (contract) {
-      getTokenCount()
+    if (address) {
+      fetchNFTData()
     }
 
   }, [address, contract])
@@ -45,11 +59,18 @@ const page = () => {
           <FilterTags key={idx} tag={filter.name} icon={filter.icon} />
         ))}
       </Stack>
-      {nfts && <Typography mt={2}>
-        total nfts : {nfts}
-      </Typography>}
+      {nfts?.map((nft, idx) => (
+        <Box key={idx} my={2}>
+          <Typography>{nft.tokenId}</Typography>
+          <Typography>{nft.nftContract}</Typography>
+          <Typography>{nft.seller}</Typography>
+          <Typography>{ethers.formatEther(nft.price)}</Typography>
+          <Typography>{new Date(nft.createdAt).toLocaleString()}</Typography>
+
+        </Box>
+      ))}
     </Box>
   )
 }
 
-export default page
+export default Page

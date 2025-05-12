@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
           value: "Value 2",
         },
       ],
-      external_url: `https://example.com/${imageCid}`, // Example external URL (could link to the NFT project page)
+      external_url: `https://example.com/${imageCid}`, 
     };
 
     // Step 3: Upload metadata JSON to IPFS using Pinata SDK

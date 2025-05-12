@@ -24,8 +24,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  modal
 }: Readonly<{
   children: React.ReactNode;
+  modal: React.ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -38,11 +40,12 @@ export default function RootLayout({
             <Appbar />
             <Box sx={{
               color: 'white',
-              marginLeft: '3.7rem',
+              paddingLeft: '3.7rem',
               minHeight: '100vh',
               bgcolor: '#111112',
               paddingTop: '3.5rem',
             }}>
+              {modal}
               {children}
             </Box>
 

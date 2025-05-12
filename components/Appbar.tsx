@@ -39,7 +39,7 @@ const Appbar = () => {
             borderColor: '#38343C',
             borderBottomWidth: '2px',
             alignItems: 'center',
-            zIndex: 100,
+            zIndex: 3,
         }}>
             <Box color={'white'} sx={{
                 background: 'rgba(48, 48, 48, 0.214)',

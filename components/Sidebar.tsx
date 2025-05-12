@@ -48,7 +48,7 @@ const Sidebar = () => {
             borderColor: '#26272D',
             borderRightWidth: '2px',
             transition: 'all 0.1s ease-out',
-            zIndex: 999,
+            zIndex: 4,
             ":hover": {
                 width: '12rem'
             }

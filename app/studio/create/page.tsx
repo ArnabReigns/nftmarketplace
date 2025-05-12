@@ -1,7 +1,7 @@
 'use client';
 
 import { FileUpload, FileUploadProps } from '@/components/FileUploader';
-import { useContract } from '@/hooks/useContract';
+import { useContract } from '@/hooks/useNFTContract';
 import { useWallet } from '@/hooks/useWallet';
 import { Box, Typography, Button, Stack, TextField, CircularProgress, Dialog, Stepper, Step, StepLabel, Avatar, StepContent } from '@mui/material';
 import React, { useState } from 'react';
@@ -42,7 +42,7 @@ const steps = [
     },
 ];
 
-const Page = () => {
+function Page() {
     const [file, setFile] = useState<File | null>(null);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
@@ -54,7 +54,7 @@ const Page = () => {
     const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
     const { address } = useWallet();
-    const { contract } = useContract(CONTRACT_ADDRESS, CONTRACT_ABI, address)
+    const { contract } = useContract(address)
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
