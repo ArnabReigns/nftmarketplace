@@ -1,12 +1,12 @@
 'use client'
 
-import { Box, BoxProps, Stack, Typography } from '@mui/material'
-import React, { useEffect, useState } from 'react'
+import { useWallet } from '@/hooks/useWallet';
+import { Box, BoxProps, Stack, Typography } from '@mui/material';
 import { CellSignalHigh, Compass, Icon, ListDashes, Pencil, User } from "@phosphor-icons/react";
 import { PhosphorLogo } from '@phosphor-icons/react/dist/ssr';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useWallet } from '@/hooks/useWallet';
+import { useEffect, useState } from 'react';
 
 const Sidebar = () => {
     const [selected, setSelected] = useState(-1);
@@ -25,7 +25,6 @@ const Sidebar = () => {
     const pathname = usePathname()
     useEffect(() => {
 
-        console.log(pathname)
 
         menuItems.forEach((item, idx) => {
             if (pathname.startsWith(item.path)) setSelected(idx)

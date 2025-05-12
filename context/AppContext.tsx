@@ -3,11 +3,10 @@
 import { useMArketContract } from '@/hooks/useMarketContract';
 import { useContract } from '@/hooks/useNFTContract';
 import { useWallet } from '@/hooks/useWallet';
-import { IToken } from '@/model/nft';
 import { IUser } from '@/model/user';
 import axios from 'axios';
 import { ethers } from 'ethers';
-import React, { useState, useEffect, ReactNode, useContext } from 'react';
+import React, { ReactNode, useContext, useEffect, useState } from 'react';
 
 interface AppContextInterface {
     address: string | null,
@@ -45,7 +44,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     async function fetchUser() {
         const res = await axios.get("/api/getUser", { params: { address } })
-        console.log(res.data);
         return res.data;
     }
 
@@ -53,7 +51,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         if (address) {
             fetchUser().then((user: IUser) => {
-                if (user) setUser(user)
+                setUser(user)
             }).catch((err) => console.error(err)).finally(() => setLoading(false))
         }
     }, [address])

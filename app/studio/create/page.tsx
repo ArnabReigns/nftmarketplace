@@ -1,12 +1,11 @@
 'use client';
 
-import { FileUpload, FileUploadProps } from '@/components/FileUploader';
+import { FileUpload } from '@/components/FileUploader';
 import { useContract } from '@/hooks/useNFTContract';
 import { useWallet } from '@/hooks/useWallet';
-import { Box, Typography, Button, Stack, TextField, CircularProgress, Dialog, Stepper, Step, StepLabel, Avatar, StepContent } from '@mui/material';
-import React, { useState } from 'react';
-import CONTRACT_ABI from "@/lib/nftContractABi.json";
+import { Box, Button, CircularProgress, Dialog, Stack, Step, StepContent, StepLabel, Stepper, TextField, Typography } from '@mui/material';
 import { ethers } from 'ethers';
+import React, { useState } from 'react';
 
 // Add a utility function to upload to your backend API
 const uploadToBackend = async (file: File, name: string, description: string) => {
@@ -90,13 +89,11 @@ function Page() {
                 await tx.wait()
                 setMintstate(3)
                 const txHash = tx.hash; // Get the transaction hash
-                console.log(`https://sepolia.etherscan.io/tx/${txHash}`);
                 setMintingStatus("NFT Minted successfully!");
             } else {
                 setMintingStatus("Error: No metadata URI found.");
             }
 
-            console.log("NFT Minted with Metadata URI:", metadataUri);
 
             setMintingStatus("NFT Minted successfully!");
         } catch (error) {

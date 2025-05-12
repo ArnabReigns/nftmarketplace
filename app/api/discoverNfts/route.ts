@@ -14,7 +14,6 @@ export async function GET(req: Request) {
             "listingId": { $ne: null }
         })
 
-        console.log('market listings => ', data);
         return NextResponse.json(data);
     } catch (err) {
         console.error(err);

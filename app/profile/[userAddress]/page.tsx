@@ -1,27 +1,26 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useWallet } from "@/hooks/useWallet";
 
-import {
-	Alert,
-	Avatar,
-	Box, Button, ButtonGroup, CircularProgress, Dialog, DialogContent, DialogTitle, Divider, Fade, IconButton, Skeleton, Slide, Snackbar, Stack, TextField, Typography
-} from "@mui/material";
-import Image from "next/image";
 import DEFAULT_BG from "@/public/profileDefaultBG.jpg";
-import { Copy, Globe, Pencil, PhosphorLogo } from "@phosphor-icons/react/dist/ssr";
 import default_user from "@/public/user_default.png";
+import {
+	Avatar,
+	Box, Button, ButtonGroup, CircularProgress, Dialog,
+	Divider, Fade, IconButton, Skeleton, Slide, Snackbar, Stack, TextField, Typography
+} from "@mui/material";
+import { Copy, Globe, Pencil, PhosphorLogo } from "@phosphor-icons/react/dist/ssr";
+import Image from "next/image";
 import { use } from "react";
-import { useContract } from "@/hooks/useNFTContract";
 
-import { IToken } from "@/model/nft";
-import { NFT } from "./(components)/NFT";
-import { Created } from "./(components)/Created";
-import axios from "axios";
-import { IUser } from "@/model/user";
 import { useAppContext } from "@/context/AppContext";
 import { cmpAddr } from "@/lib/compareAddress";
+import { IToken } from "@/model/nft";
+import { IUser } from "@/model/user";
+import axios from "axios";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Created } from "./(components)/Created";
+import { NFT } from "./(components)/NFT";
 
 
 
@@ -32,8 +31,10 @@ function Page({ params }: { params: Promise<{ userAddress: string }> }) {
 	const [name, setName] = useState("");
 	const [savingUser, setSavingUser] = useState(false);
 
-	const { address, user, setUser, userLoading, nftContract: contract, refreshMap } = useAppContext();
+	const { address, user: currentUser, setUser: setCurrentUser, userLoading, nftContract: contract, refreshMap } = useAppContext();
 	const { userAddress } = use(params);
+
+	const [user, setUser] = useState<IUser | null>(null);
 
 
 	async function fetchNFTData() {
@@ -43,7 +44,6 @@ function Page({ params }: { params: Promise<{ userAddress: string }> }) {
 			);
 			const data: IToken[] = await response.json();
 
-			console.log(data);
 			if (response.ok) {
 				setNfts(data?.filter((nft) => nft.metadata.image));
 			}
@@ -62,7 +62,6 @@ function Page({ params }: { params: Promise<{ userAddress: string }> }) {
 				name: name,
 				address: address,
 			});
-			console.log(response.data);
 			setUser(response.data);
 		} catch (err) {
 			console.log("Failed to register user. Please try again.");
@@ -78,12 +77,35 @@ function Page({ params }: { params: Promise<{ userAddress: string }> }) {
 		}
 	}, [address, contract, userAddress, refreshMap['user_nft']]);
 
+	const searchParams = useSearchParams();
+	const router = useRouter();
+
 
 	useEffect(() => {
-		if (address && !userLoading) {
-			if (user == null && cmpAddr(userAddress, address)) setShowRegisterModal(true)
+		if (!address) return;
+
+
+		if (cmpAddr(userAddress, address)) {
+			// this is logged in user's profile
+			if (!userLoading) {
+				if (currentUser == null && cmpAddr(userAddress, address)) {
+					setShowRegisterModal(true)
+				} // if user is null --> ask to register in app
+				else setUser(currentUser) // if user is not null --> set user
+			}
 		}
-	}, [address, user])
+		else {
+			// this is not logged in user's profile
+			axios.get('/api/getUser', { params: { address: userAddress } }).then(res => setUser(res.data))
+		}
+
+		if (searchParams.get('profile') === '1' && !cmpAddr(userAddress, address)) {
+			router.push(`/profile/${address}/?profile=1`)
+		}
+
+	}, [address, currentUser])
+
+
 
 	const tabs = ["Nfts", "Listings", "Created", "Watchlist", "Activity"];
 	const [activeTab, setActiveTab] = useState(0);
@@ -129,7 +151,7 @@ function Page({ params }: { params: Promise<{ userAddress: string }> }) {
 					left={"1rem"}
 					gap={1}
 				>
-					{user ? <Avatar
+					{!userLoading ? <Avatar
 						src={user?.profilePhoto || default_user.src}
 						alt="Arnab Chatterjee"
 						sx={{ bgcolor: "#DE0374", width: 75, height: 75 }}
@@ -142,6 +164,7 @@ function Page({ params }: { params: Promise<{ userAddress: string }> }) {
 							<Typography fontSize={user ? "0.9rem" : "1.2rem"} color={user ? "text.secondary" : ""}>
 								{userAddress}
 							</Typography>
+
 						</Stack>
 						<Divider flexItem orientation="vertical" />
 						<Pencil

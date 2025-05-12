@@ -9,7 +9,6 @@ export async function GET(req: Request) {
 
 	const address = searchParams.get("address");
 
-	console.log("current profile address => " + address);
 
 	if (!address) {
 		return NextResponse.json(
@@ -29,7 +28,6 @@ export async function GET(req: Request) {
 			],
 		});
 
-		console.log(data);
 
 		return NextResponse.json(data);
 	} catch (err) {

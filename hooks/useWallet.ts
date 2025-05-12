@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { BrowserProvider, JsonRpcSigner } from "ethers";
+import { useEffect, useState } from "react";
 
 export function useWallet() {
 	const [address, setAddress] = useState<string | null>(null);
@@ -18,23 +18,21 @@ export function useWallet() {
 				method: "eth_accounts",
 			});
 
-		accounts().then((res) => console.log("accounts : " + res));
+		accounts().then((res) => {
+
+		});
 
 		const handleAccountsChanged = async (accounts: string[]) => {
 			if (accounts.length === 0) {
-				// Account disconnected OR switched to an unconnected account
-				disconnectWallet(); // <-- Important: clear app state
+				disconnectWallet();
 			} else {
-				// Check if current address is different — update if needed
-				if (accounts[0] !== address) {
-					const newProvider = new BrowserProvider(window.ethereum);
-					const newSigner = await newProvider.getSigner();
+				const newProvider = new BrowserProvider(window.ethereum);
+				const newSigner = await newProvider.getSigner();
 
-					setProvider(newProvider);
-					setSigner(newSigner);
-					setAddress(accounts[0]);
-					setIsConnected(true);
-				}
+				setProvider(newProvider);
+				setSigner(newSigner);
+				setAddress(accounts[0]);
+				setIsConnected(true);
 			}
 		};
 

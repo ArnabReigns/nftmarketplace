@@ -8,12 +8,14 @@ import { useContract } from '@/hooks/useNFTContract';
 import { useWallet } from '@/hooks/useWallet';
 import { IToken } from '@/model/nft';
 import NftCard from '@/components/NftCard';
+import { useAppContext } from '@/context/AppContext';
 
 
 const Page = () => {
 
   const { address } = useWallet();
   const { contract } = useContract(address)
+  const { refreshMap } = useAppContext();
 
 
   const filterTags = [
@@ -33,7 +35,6 @@ const Page = () => {
       const data: IToken[] = await response.json();
 
       if (response.ok) {
-        console.log(data);
         setNfts(data)
       }
     } catch (err) {
@@ -44,7 +45,7 @@ const Page = () => {
 
   useEffect(() => {
     fetchNFTData()
-  }, [address, contract])
+  }, [address, contract, refreshMap['user_nft']])
 
   return (
     <Box color={'white'} height={'100vh'} p={1}>

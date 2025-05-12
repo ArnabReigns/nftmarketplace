@@ -1,10 +1,10 @@
 import { useAppContext } from '@/context/AppContext'
 import { cmpAddr } from '@/lib/compareAddress'
 import { IToken } from '@/model/nft'
-import { Box, Button, ButtonGroup, ButtonProps, Divider, ListItemText, Menu, MenuItem, MenuList, Paper, Typography } from '@mui/material'
+import { Box, Button, ButtonGroup, ButtonProps, Divider, ListItemText, Menu, MenuItem, MenuList, Paper } from '@mui/material'
 import { DotsThreeOutlineVertical } from '@phosphor-icons/react/dist/ssr'
 import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { toast } from 'react-toastify'
 
 interface NftButtonProps extends ButtonProps {
@@ -19,9 +19,7 @@ const NftButton = ({ nft, children, ...buttonProps }: NftButtonProps) => {
     const { address, user, setUser } = useAppContext();
 
 
-    useEffect(() => {
-        console.log(address, nft?.seller, nft?.owner);
-    }, [nft, address])
+
 
     const open = Boolean(anchorEl);
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -55,7 +53,7 @@ const NftButton = ({ nft, children, ...buttonProps }: NftButtonProps) => {
                 >
                     {children}
                 </Button>
-                <Button
+                {(cmpAddr(nft?.owner, address) || cmpAddr(nft?.seller, address)) && <Button
                     sx={{
                         bgcolor: "primary.dark",
                         color: "white",
@@ -67,10 +65,10 @@ const NftButton = ({ nft, children, ...buttonProps }: NftButtonProps) => {
                         size={20}
                         weight="fill"
                     />
-                </Button>
+                </Button>}
             </ButtonGroup>
 
-            <Menu
+            {(cmpAddr(nft?.owner, address) || cmpAddr(nft?.seller, address)) && <Menu
                 slotProps={{
                     list: {
                         sx: {
@@ -117,12 +115,11 @@ const NftButton = ({ nft, children, ...buttonProps }: NftButtonProps) => {
                                 ⌘C
                             </Typography>
                         </MenuItem> */}
-                        {(cmpAddr(nft?.owner, address) || cmpAddr(nft?.seller, address)) && < MenuItem onClick={() => {
+                        < MenuItem onClick={() => {
                             axios.post('/api/setProfilePicture', {
                                 address: address,
                                 profilePhoto: nft?.metadata.image
                             }).then((res) => {
-                                console.log(res.data.message);
                                 setUser(res.data.user);
                                 toast.success('Profile picture set successfully');
                             }).catch(() => {
@@ -134,7 +131,7 @@ const NftButton = ({ nft, children, ...buttonProps }: NftButtonProps) => {
                             <ListItemText>
                                 Set as profile picture
                             </ListItemText>
-                        </ MenuItem>}
+                        </ MenuItem>
                         <Divider />
                         <MenuItem disabled>
                             <ListItemText >
@@ -143,7 +140,7 @@ const NftButton = ({ nft, children, ...buttonProps }: NftButtonProps) => {
                         </MenuItem>
                     </MenuList>
                 </Paper>
-            </Menu>
+            </Menu>}
         </Box >
     )
 }

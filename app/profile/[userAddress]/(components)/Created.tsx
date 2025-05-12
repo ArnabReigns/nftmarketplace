@@ -1,40 +1,14 @@
-import { useMArketContract } from "@/hooks/useMarketContract";
-import { useContract } from "@/hooks/useNFTContract";
-import { useWallet } from "@/hooks/useWallet";
+import FilterTags from "@/components/FilterTags";
+import NftCard from "@/components/NftCard";
 import { IToken } from "@/model/nft";
-import { ethers } from "ethers";
-import { useEffect, useState } from "react";
 import {
 	Accordion,
 	AccordionDetails,
-	AccordionSummary,
-	Avatar,
-	Box,
-	Button,
-	Collapse,
-	Dialog,
-	Divider,
-	Fade,
-	Grow,
-	Slide,
-	Stack,
-	TextField,
-	Tooltip,
-	Typography,
+	AccordionSummary, Box, Typography
 } from "@mui/material";
-import FilterTags from "@/components/FilterTags";
 import {
-	CaretDown,
-	ArrowFatLinesDown,
-	Copy,
-	Globe,
-	Pencil,
+	CaretDown
 } from "@phosphor-icons/react/dist/ssr";
-import Image from "next/image";
-import { shortenAddress } from "@/lib/shortenAddress";
-import Link from "next/link";
-import NftButton from "./NftButton";
-import NftCard from "@/components/NftCard";
 
 export const Created = ({
 	nfts,
@@ -43,43 +17,6 @@ export const Created = ({
 	nfts: IToken[] | null;
 	symbol?: string;
 }) => {
-	const [active, setActive] = useState<IToken | null>(null);
-
-	const [val, setVal] = useState<string | null>("0");
-
-	const { address } = useWallet();
-	const { contract } = useMArketContract(address);
-	const { contract: nftContract } = useContract(address);
-
-	useEffect(() => {
-		if (contract) {
-			console.log("contract loaded");
-		}
-	}, [contract]);
-
-	async function handleListItem() {
-		try {
-			const fee = ethers.parseUnits("10", "wei");
-
-			let tx = await nftContract?.approve(
-				process.env.NEXT_PUBLIC_MARKET_CONTRACT_ADDRESS,
-				active?.tokenId
-			);
-			tx.wait();
-			tx = await contract?.listItem(
-				active?.nftContract,
-				active?.tokenId,
-				ethers.parseUnits(val!.toString(), "ether"),
-				{
-					value: fee,
-				}
-			);
-			tx.wait();
-			console.log("item listed");
-		} catch (err) {
-			console.log(err);
-		}
-	}
 
 	return (
 		<>
